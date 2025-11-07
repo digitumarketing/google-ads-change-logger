@@ -1,6 +1,6 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { User, Account, ChangeLog, Comment, UserRole, ChangeResult } from '../types';
-import { USERS, ACCOUNTS, CHANGE_LOGS } from '../data/mockData';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { User, Account, ChangeLog, UserRole } from '../types';
+import { userService, accountService, changeLogService, commentService } from '../services/database';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 interface AppContextType {
@@ -19,102 +19,168 @@ interface AppContextType {
   addChangeLog: (log: Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>) => void;
   updateChangeLog: (log: ChangeLog) => void;
   addComment: (logId: string, commentText: string) => void;
+  loading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [users, setUsers] = useLocalStorage<User[]>('users', USERS);
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
-  const [accounts, setAccounts] = useLocalStorage<Account[]>('accounts', ACCOUNTS);
-  const [changeLogs, setChangeLogs] = useLocalStorage<ChangeLog[]>('changeLogs', CHANGE_LOGS);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [usersData, accountsData, changeLogsData] = await Promise.all([
+        userService.getAll(),
+        accountService.getAll(),
+        changeLogService.getAll(),
+      ]);
+
+      if (usersData.length === 0) {
+        const defaultAdmin = await userService.create({ name: 'Admin User', role: UserRole.Admin });
+        setUsers([defaultAdmin]);
+      } else {
+        setUsers(usersData);
+      }
+
+      setAccounts(accountsData);
+      setChangeLogs(changeLogsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const logout = () => {
     setCurrentUser(null);
   };
 
-  const addUser = (userData: Omit<User, 'id'>) => {
-    const newUser: User = { ...userData, id: `user_${new Date().getTime()}` };
-    setUsers(prev => [...prev, newUser]);
-  };
-
-  const updateUser = (updatedUser: User) => {
-    setUsers(prevUsers => {
-        const oldUser = prevUsers.find(u => u.id === updatedUser.id);
-        if (oldUser && oldUser.name !== updatedUser.name) {
-            setAccounts(prevAccounts => prevAccounts.map(acc => acc.manager === oldUser.name ? { ...acc, manager: updatedUser.name } : acc));
-        }
-        return prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u);
-    });
-  };
-
-  const deleteUser = (userId: string) => {
-    const userToDelete = users.find(u => u.id === userId);
-    if (!userToDelete) return;
-
-    const reassignmentAdmin = users.find(u => u.role === UserRole.Admin && u.id !== userId);
-    
-    setAccounts(prev => prev.map(acc => {
-        if (acc.manager === userToDelete.name) {
-            return { ...acc, manager: reassignmentAdmin ? reassignmentAdmin.name : 'Unassigned' };
-        }
-        return acc;
-    }));
-
-    if (currentUser?.id === userId) {
-      logout();
+  const addUser = async (userData: Omit<User, 'id'>) => {
+    try {
+      const newUser = await userService.create(userData);
+      setUsers(prev => [...prev, newUser]);
+    } catch (error) {
+      console.error('Error adding user:', error);
     }
-    setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
-  const addAccount = (accountData: Omit<Account, 'id'>) => {
-    const newAccount: Account = { ...accountData, id: `acc_${new Date().getTime()}` };
-    setAccounts(prev => [...prev, newAccount]);
-  };
+  const updateUser = async (updatedUser: User) => {
+    try {
+      const oldUser = users.find(u => u.id === updatedUser.id);
+      const updated = await userService.update(updatedUser);
 
-  const updateAccount = (updatedAccount: Account) => {
-    setAccounts(prev => prev.map(acc => acc.id === updatedAccount.id ? updatedAccount : acc));
-  };
-  
-  const deleteAccount = (accountId: string) => {
-    setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
-    setChangeLogs(prevLogs => prevLogs.filter(log => log.accountId !== accountId));
-  };
-
-  const addChangeLog = (logData: Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>) => {
-    if (!currentUser) return;
-    const newLog: ChangeLog = {
-      ...logData,
-      id: `log_${new Date().getTime()}`,
-      postChangeMetrics: null,
-      result: ChangeResult.Pending,
-      resultSummary: '',
-      comments: [],
-      loggedById: currentUser.id,
-    };
-    setChangeLogs(prev => [newLog, ...prev]);
-  };
-
-  const updateChangeLog = (updatedLog: ChangeLog) => {
-    setChangeLogs(prev => prev.map(log => log.id === updatedLog.id ? updatedLog : log));
-  };
-  
-  const addComment = (logId: string, commentText: string) => {
-    if (!currentUser) return;
-    const newComment: Comment = {
-      id: `comm_${new Date().getTime()}`,
-      logId,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      timestamp: new Date().toISOString(),
-      text: commentText,
-    };
-    setChangeLogs(prev => prev.map(log => {
-      if (log.id === logId) {
-        return { ...log, comments: [...log.comments, newComment] };
+      if (oldUser && oldUser.name !== updatedUser.name) {
+        await accountService.updateManagerName(oldUser.name, updatedUser.name);
+        const updatedAccounts = await accountService.getAll();
+        setAccounts(updatedAccounts);
       }
-      return log;
-    }));
+
+      setUsers(prevUsers => prevUsers.map(u => u.id === updated.id ? updated : u));
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    try {
+      const userToDelete = users.find(u => u.id === userId);
+      if (!userToDelete) return;
+
+      const reassignmentAdmin = users.find(u => u.role === UserRole.Admin && u.id !== userId);
+
+      if (reassignmentAdmin) {
+        await accountService.updateManagerName(userToDelete.name, reassignmentAdmin.name);
+      } else {
+        await accountService.updateManagerName(userToDelete.name, 'Unassigned');
+      }
+
+      await userService.delete(userId);
+
+      if (currentUser?.id === userId) {
+        logout();
+      }
+
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      const updatedAccounts = await accountService.getAll();
+      setAccounts(updatedAccounts);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
+
+  const addAccount = async (accountData: Omit<Account, 'id'>) => {
+    try {
+      const newAccount = await accountService.create(accountData);
+      setAccounts(prev => [...prev, newAccount]);
+    } catch (error) {
+      console.error('Error adding account:', error);
+    }
+  };
+
+  const updateAccount = async (updatedAccount: Account) => {
+    try {
+      const updated = await accountService.update(updatedAccount);
+      setAccounts(prev => prev.map(acc => acc.id === updated.id ? updated : acc));
+    } catch (error) {
+      console.error('Error updating account:', error);
+    }
+  };
+
+  const deleteAccount = async (accountId: string) => {
+    try {
+      await accountService.delete(accountId);
+      setAccounts(prevAccounts => prevAccounts.filter(acc => acc.id !== accountId));
+      const updatedChangeLogs = await changeLogService.getAll();
+      setChangeLogs(updatedChangeLogs);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+    }
+  };
+
+  const addChangeLog = async (logData: Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>) => {
+    if (!currentUser) return;
+    try {
+      const newLog = await changeLogService.create({
+        ...logData,
+        loggedById: currentUser.id,
+      });
+      setChangeLogs(prev => [newLog, ...prev]);
+    } catch (error) {
+      console.error('Error adding change log:', error);
+    }
+  };
+
+  const updateChangeLog = async (updatedLog: ChangeLog) => {
+    try {
+      const updated = await changeLogService.update(updatedLog);
+      setChangeLogs(prev => prev.map(log => log.id === updated.id ? updated : log));
+    } catch (error) {
+      console.error('Error updating change log:', error);
+    }
+  };
+
+  const addComment = async (logId: string, commentText: string) => {
+    if (!currentUser) return;
+    try {
+      const newComment = await commentService.create(logId, currentUser.id, currentUser.name, commentText);
+      setChangeLogs(prev => prev.map(log => {
+        if (log.id === logId) {
+          return { ...log, comments: [...log.comments, newComment] };
+        }
+        return log;
+      }));
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
   };
 
   const value = {
@@ -133,6 +199,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addChangeLog,
     updateChangeLog,
     addComment,
+    loading,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
