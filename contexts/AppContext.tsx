@@ -53,6 +53,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setAccounts(accountsData);
       setChangeLogs(changeLogsData);
+
+      if (currentUser && !usersData.find(u => u.id === currentUser.id)) {
+        setCurrentUser(null);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
