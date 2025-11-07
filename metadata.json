@@ -1,0 +1,5 @@
+{
+  "name": "Google Ads Change Logger",
+  "description": "An internal tool for performance marketers to log, track, and analyze changes in Google Ads search campaigns, ensuring accountability and shared learnings.",
+  "requestFramePermissions": []
+}
