@@ -14,7 +14,7 @@ const LogPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAccount, setFilterAccount] = useState('all');
 
-    const canAddChange = currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
+    const canAddChange = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
 
     const filteredLogs = useMemo(() => {
         return changeLogs

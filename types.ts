@@ -84,6 +84,12 @@ export interface ChangeLog {
   postChangeMetrics: PerformanceMetrics | null;
   nextReviewDate?: string;
   loggedById: string;
+  createdByName?: string;
+  lastEditedById?: string;
+  lastEditedByName?: string;
+  lastEditedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
   result: ChangeResult;
   resultSummary: string;
   comments: Comment[];

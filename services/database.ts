@@ -20,9 +20,14 @@ interface DbChangeLog {
   post_change_cpa: number | null;
   next_review_date: string | null;
   logged_by_id: string;
+  created_by_name: string | null;
+  last_edited_by_id: string | null;
+  last_edited_by_name: string | null;
+  last_edited_at: string | null;
   result: string;
   result_summary: string;
   created_at: string;
+  updated_at: string;
 }
 
 interface DbComment {
@@ -66,14 +71,20 @@ const mapDbChangeLogToChangeLog = (dbLog: DbChangeLog, comments: Comment[]): Cha
     postChangeMetrics,
     nextReviewDate: dbLog.next_review_date || undefined,
     loggedById: dbLog.logged_by_id,
+    createdByName: dbLog.created_by_name || undefined,
+    lastEditedById: dbLog.last_edited_by_id || undefined,
+    lastEditedByName: dbLog.last_edited_by_name || undefined,
+    lastEditedAt: dbLog.last_edited_at || undefined,
+    createdAt: dbLog.created_at,
+    updatedAt: dbLog.updated_at,
     result: dbLog.result as any,
     resultSummary: dbLog.result_summary,
     comments,
   };
 };
 
-const mapChangeLogToDb = (log: Partial<ChangeLog>) => {
-  return {
+const mapChangeLogToDb = (log: Partial<ChangeLog>, includeTracking = false) => {
+  const baseData = {
     date_of_change: log.dateOfChange,
     account_id: log.accountId,
     campaign_name: log.campaignName,
@@ -94,6 +105,17 @@ const mapChangeLogToDb = (log: Partial<ChangeLog>) => {
     result: log.result,
     result_summary: log.resultSummary,
   };
+
+  if (includeTracking) {
+    return {
+      ...baseData,
+      created_by_name: log.createdByName,
+      last_edited_by_id: log.lastEditedById,
+      last_edited_by_name: log.lastEditedByName,
+    };
+  }
+
+  return baseData;
 };
 
 export const userService = {
@@ -265,13 +287,14 @@ export const changeLogService = {
     return logs.map(log => mapDbChangeLogToChangeLog(log, commentsByLogId[log.id] || []));
   },
 
-  async create(log: Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>): Promise<ChangeLog> {
+  async create(log: Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>, userName: string): Promise<ChangeLog> {
     const dbLog = mapChangeLogToDb({
       ...log,
+      createdByName: userName,
       postChangeMetrics: null,
       result: 'Pending' as any,
       resultSummary: '',
-    });
+    }, true);
 
     const { data, error } = await supabase
       .from('change_logs')
@@ -283,8 +306,12 @@ export const changeLogService = {
     return mapDbChangeLogToChangeLog(data, []);
   },
 
-  async update(log: ChangeLog): Promise<ChangeLog> {
-    const dbLog = mapChangeLogToDb(log);
+  async update(log: ChangeLog, userId: string, userName: string): Promise<ChangeLog> {
+    const dbLog = mapChangeLogToDb({
+      ...log,
+      lastEditedById: userId,
+      lastEditedByName: userName,
+    }, true);
 
     const { data, error } = await supabase
       .from('change_logs')

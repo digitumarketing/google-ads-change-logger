@@ -191,7 +191,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const newLog = await changeLogService.create({
         ...logData,
         loggedById: currentUser.id,
-      });
+      }, currentUser.name);
       setChangeLogs(prev => [newLog, ...prev]);
     } catch (error) {
       console.error('Error adding change log:', error);
@@ -199,8 +199,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const updateChangeLog = async (updatedLog: ChangeLog) => {
+    if (!currentUser) return;
     try {
-      const updated = await changeLogService.update(updatedLog);
+      const updated = await changeLogService.update(updatedLog, currentUser.id, currentUser.name);
       setChangeLogs(prev => prev.map(log => log.id === updated.id ? updated : log));
     } catch (error) {
       console.error('Error updating change log:', error);

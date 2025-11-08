@@ -29,7 +29,7 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
     const [resultSummary, setResultSummary] = useState(log.resultSummary);
     const [commentText, setCommentText] = useState('');
     
-    const canEdit = currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
+    const canEdit = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
 
     const account = accounts.find(a => a.id === log.accountId);
     const user = users.find(u => u.id === log.loggedById);
@@ -95,13 +95,23 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
                             <p className="text-gray-600 dark:text-gray-300">{log.expectedImpact}</p>
                         </div>
                          <div>
-                            <h4 className="font-semibold mb-1">Logged By</h4>
-                            <p className="text-gray-600 dark:text-gray-300">{user?.name || 'Unknown User'}</p>
+                            <h4 className="font-semibold mb-1">Created By</h4>
+                            <p className="text-gray-600 dark:text-gray-300">{log.createdByName || user?.name || 'Unknown User'}</p>
+                            {log.createdAt && <p className="text-xs text-gray-400">{new Date(log.createdAt).toLocaleString()}</p>}
                         </div>
                          <div>
                             <h4 className="font-semibold mb-1">Next Review Date</h4>
                             <p className="text-gray-600 dark:text-gray-300">{log.nextReviewDate ? new Date(log.nextReviewDate).toLocaleDateString() : 'N/A'}</p>
                         </div>
+                        {log.lastEditedByName && (
+                          <div className="md:col-span-2">
+                            <h4 className="font-semibold mb-1">Last Edited By</h4>
+                            <p className="text-gray-600 dark:text-gray-300">
+                              {log.lastEditedByName}
+                              {log.lastEditedAt && <span className="text-xs text-gray-400 ml-2">on {new Date(log.lastEditedAt).toLocaleString()}</span>}
+                            </p>
+                          </div>
+                        )}
                     </div>
                     
                     {/* Impact Tracking and Chart */}
