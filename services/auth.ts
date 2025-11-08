@@ -27,6 +27,8 @@ export const authService = {
 
       const userData = result.user;
 
+      await supabase.auth.signOut();
+
       return {
         user: {
           id: userData.id,
