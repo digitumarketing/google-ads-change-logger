@@ -96,10 +96,12 @@ const AccountForm: React.FC<AccountFormProps> = ({ account, onClose }) => {
                     background-color: #fff;
                     border: 1px solid #d1d5db;
                     border-radius: 0.375rem;
+                    color: #111827;
                 }
                 .dark .form-input, .dark .form-select {
                     background-color: #374151;
                     border-color: #4b5563;
+                    color: #f9fafb;
                 }
             `}</style>
         </form>
