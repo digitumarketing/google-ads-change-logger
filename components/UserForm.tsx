@@ -51,7 +51,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onClose }) => {
                 return;
             }
 
-            const { user: newUser, error: signUpError } = await authService.signUp(
+            const { user: newUser, error: signUpError } = await authService.createUser(
                 formData.email,
                 formData.password,
                 formData.name,
@@ -130,10 +130,12 @@ const UserForm: React.FC<UserFormProps> = ({ user, onClose }) => {
                     background-color: #fff;
                     border: 1px solid #d1d5db;
                     border-radius: 0.375rem;
+                    color: #111827;
                 }
                 .dark .form-input, .dark .form-select {
                     background-color: #374151;
                     border-color: #4b5563;
+                    color: #f9fafb;
                 }
                 .form-input:focus, .form-select:focus {
                     outline: 2px solid transparent;
