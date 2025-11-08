@@ -41,7 +41,7 @@ const AppLayout: React.FC = () => (
 );
 
 const App: React.FC = () => {
-  const { loading, users } = useAppContext();
+  const { loading, hasUsersInDb } = useAppContext();
 
   if (loading) {
     return (
@@ -54,7 +54,7 @@ const App: React.FC = () => {
     );
   }
 
-  if (!loading && users.length === 0) {
+  if (!loading && !hasUsersInDb) {
     return (
       <Routes>
         <Route path="/setup" element={<SetupPage />} />

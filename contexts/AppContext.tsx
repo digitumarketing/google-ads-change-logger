@@ -21,6 +21,7 @@ interface AppContextType {
   updateChangeLog: (log: ChangeLog) => void;
   addComment: (logId: string, commentText: string) => void;
   loading: boolean;
+  hasUsersInDb: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,6 +32,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasUsersInDb, setHasUsersInDb] = useState(false);
 
   useEffect(() => {
     initializeAuth();
@@ -59,6 +61,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const initializeAuth = async () => {
     try {
       setLoading(true);
+
+      const allUsers = await userService.getAll();
+      setHasUsersInDb(allUsers.length > 0);
+
       const { user } = await authService.getCurrentSession();
       if (user) {
         setCurrentUser(user);
@@ -233,6 +239,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     updateChangeLog,
     addComment,
     loading,
+    hasUsersInDb,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

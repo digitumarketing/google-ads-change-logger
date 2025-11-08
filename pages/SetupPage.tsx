@@ -45,16 +45,16 @@ const SetupPage: React.FC = () => {
       UserRole.SuperAdmin
     );
 
+    setLoading(false);
+
     if (signUpError) {
       setError(signUpError.message || 'Failed to create Super Admin account');
-      setLoading(false);
       return;
     }
 
     if (user) {
-      navigate('/login', { replace: true });
+      window.location.href = '/login';
     }
-    setLoading(false);
   };
 
   return (
