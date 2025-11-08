@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -11,6 +11,19 @@ const UsersPage: React.FC = () => {
   const { users, deleteUser, currentUser } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const isSuperAdmin = currentUser?.role === UserRole.SuperAdmin;
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400">Only Super Admins can manage users.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddUser = () => {
     setSelectedUser(null);
@@ -48,6 +61,7 @@ const UsersPage: React.FC = () => {
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
                 <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
               </tr>
@@ -56,6 +70,7 @@ const UsersPage: React.FC = () => {
               {users.map((user) => (
                 <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{user.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{user.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-3">

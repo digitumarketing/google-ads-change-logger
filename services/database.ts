@@ -104,33 +104,63 @@ export const userService = {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(u => ({
+      id: u.id,
+      authId: u.auth_id,
+      email: u.email,
+      name: u.name,
+      role: u.role,
+    }));
   },
 
-  async create(user: Omit<User, 'id'>): Promise<User> {
+  async getByAuthId(authId: string): Promise<User | null> {
     const { data, error } = await supabase
       .from('users')
-      .insert([user])
-      .select()
-      .single();
+      .select('*')
+      .eq('auth_id', authId)
+      .maybeSingle();
 
     if (error) throw error;
-    return data;
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      authId: data.auth_id,
+      email: data.email,
+      name: data.name,
+      role: data.role,
+    };
   },
 
   async update(user: User): Promise<User> {
     const { data, error } = await supabase
       .from('users')
-      .update({ name: user.name, role: user.role })
+      .update({ name: user.name, role: user.role, email: user.email })
       .eq('id', user.id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      id: data.id,
+      authId: data.auth_id,
+      email: data.email,
+      name: data.name,
+      role: data.role,
+    };
   },
 
   async delete(userId: string): Promise<void> {
+    const user = await supabase
+      .from('users')
+      .select('auth_id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (user.data?.auth_id) {
+      await supabase.auth.admin.deleteUser(user.data.auth_id);
+    }
+
     const { error } = await supabase
       .from('users')
       .delete()

@@ -8,6 +8,7 @@ import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import LoginPage from './pages/LoginPage';
 import LogPage from './pages/LogPage';
+import SetupPage from './pages/SetupPage';
 import { useAppContext } from './contexts/AppContext';
 import { UserRole } from './types';
 
@@ -19,10 +20,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
   return children;
 };
 
-const AdminRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const { currentUser } = useAppContext();
-  return currentUser?.role === UserRole.Admin ? children : <Navigate to="/" replace />;
-};
 
 const AppLayout: React.FC = () => (
   <div className="flex h-screen bg-gray-100 dark:bg-gray-900 font-sans">
@@ -35,11 +32,7 @@ const AppLayout: React.FC = () => (
           <Route path="/log" element={<LogPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/users" element={
-            <AdminRoute>
-              <UsersPage />
-            </AdminRoute>
-          } />
+          <Route path="/users" element={<UsersPage />} />
            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -48,7 +41,7 @@ const AppLayout: React.FC = () => (
 );
 
 const App: React.FC = () => {
-  const { loading } = useAppContext();
+  const { loading, users } = useAppContext();
 
   if (loading) {
     return (
@@ -61,9 +54,19 @@ const App: React.FC = () => {
     );
   }
 
+  if (!loading && users.length === 0) {
+    return (
+      <Routes>
+        <Route path="/setup" element={<SetupPage />} />
+        <Route path="*" element={<Navigate to="/setup" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/setup" element={<Navigate to="/login" replace />} />
       <Route
         path="/*"
         element={

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { User, Account, ChangeLog, UserRole } from '../types';
 import { userService, accountService, changeLogService, commentService } from '../services/database';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { authService } from '../services/auth';
+import { supabase } from '../lib/supabase';
 
 interface AppContextType {
   users: User[];
@@ -26,55 +27,83 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>([]);
-  const [currentUser, setCurrentUser] = useLocalStorage<User | null>('currentUser', null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    initializeAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      (() => {
+        if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+        } else if (event === 'SIGNED_IN' && session) {
+          loadCurrentUser(session.user.id);
+        }
+      })();
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser]);
+
+  const initializeAuth = async () => {
+    try {
+      setLoading(true);
+      const { user } = await authService.getCurrentSession();
+      if (user) {
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error initializing auth:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCurrentUser = async (authId: string) => {
+    try {
+      const user = await userService.getByAuthId(authId);
+      if (user) {
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
-      setLoading(true);
       const [usersData, accountsData, changeLogsData] = await Promise.all([
         userService.getAll(),
         accountService.getAll(),
         changeLogService.getAll(),
       ]);
 
-      if (usersData.length === 0) {
-        const defaultAdmin = await userService.create({ name: 'Admin User', role: UserRole.Admin });
-        setUsers([defaultAdmin]);
-      } else {
-        setUsers(usersData);
-      }
-
+      setUsers(usersData);
       setAccounts(accountsData);
       setChangeLogs(changeLogsData);
-
-      if (currentUser && !usersData.find(u => u.id === currentUser.id)) {
-        setCurrentUser(null);
-      }
     } catch (error) {
       console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await authService.signOut();
     setCurrentUser(null);
   };
 
   const addUser = async (userData: Omit<User, 'id'>) => {
-    try {
-      const newUser = await userService.create(userData);
-      setUsers(prev => [...prev, newUser]);
-    } catch (error) {
-      console.error('Error adding user:', error);
-    }
+    setUsers(prev => [...prev, userData as User]);
   };
 
   const updateUser = async (updatedUser: User) => {

@@ -1,5 +1,6 @@
 
 export enum UserRole {
+  SuperAdmin = 'Super Admin',
   Admin = 'Admin',
   Analyst = 'Analyst',
   Viewer = 'Viewer',
@@ -8,7 +9,9 @@ export enum UserRole {
 export interface User {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
+  authId?: string;
 }
 
 export enum AccountStatus {
