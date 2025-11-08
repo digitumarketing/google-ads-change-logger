@@ -36,7 +36,7 @@ const Sidebar: React.FC = () => {
           <BarChart3 size={20} className="mr-3" />
           Reports
         </NavLink>
-        {currentUser?.role === UserRole.Admin && (
+        {currentUser?.role === UserRole.SuperAdmin && (
           <NavLink to="/users" className={navLinkClasses}>
             <Users size={20} className="mr-3" />
             Users
