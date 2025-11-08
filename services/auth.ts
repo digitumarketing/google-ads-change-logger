@@ -12,21 +12,20 @@ export const authService = {
       if (authError) return { user: null, error: authError };
       if (!authData.user) return { user: null, error: new Error('User creation failed') };
 
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .insert([{
-          auth_id: authData.user.id,
-          email,
-          name,
-          role,
-        }])
-        .select()
-        .single();
+      const { data: result, error: functionError } = await supabase
+        .rpc('create_initial_super_admin', {
+          p_auth_id: authData.user.id,
+          p_email: email,
+          p_name: name,
+          p_role: role,
+        });
 
-      if (userError) {
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        return { user: null, error: userError };
+      if (functionError || !result || !result.success) {
+        const errorMsg = functionError?.message || result?.error || 'Failed to create user';
+        return { user: null, error: new Error(errorMsg) };
       }
+
+      const userData = result.user;
 
       return {
         user: {
