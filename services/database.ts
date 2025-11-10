@@ -341,6 +341,15 @@ export const changeLogService = {
 
     return mapDbChangeLogToChangeLog(data, mappedComments);
   },
+
+  async delete(logId: string): Promise<void> {
+    const { error } = await supabase
+      .from('change_logs')
+      .delete()
+      .eq('id', logId);
+
+    if (error) throw error;
+  },
 };
 
 export const commentService = {

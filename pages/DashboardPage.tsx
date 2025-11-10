@@ -22,7 +22,7 @@ const DashboardPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAccount, setFilterAccount] = useState('all');
     
-    const canAddChange = currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
+    const canAddChange = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
 
     const stats = useMemo(() => {
         const oneWeekAgo = new Date();

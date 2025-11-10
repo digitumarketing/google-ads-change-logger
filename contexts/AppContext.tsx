@@ -19,6 +19,7 @@ interface AppContextType {
   changeLogs: ChangeLog[];
   addChangeLog: (log: Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>) => void;
   updateChangeLog: (log: ChangeLog) => void;
+  deleteChangeLog: (logId: string) => void;
   addComment: (logId: string, commentText: string) => void;
   loading: boolean;
   hasUsersInDb: boolean;
@@ -223,6 +224,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const deleteChangeLog = async (logId: string) => {
+    try {
+      await changeLogService.delete(logId);
+      setChangeLogs(prev => prev.filter(log => log.id !== logId));
+    } catch (error) {
+      console.error('Error deleting change log:', error);
+      throw error;
+    }
+  };
+
   const value = {
     users,
     currentUser,
@@ -238,6 +249,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     changeLogs,
     addChangeLog,
     updateChangeLog,
+    deleteChangeLog,
     addComment,
     loading,
     hasUsersInDb,

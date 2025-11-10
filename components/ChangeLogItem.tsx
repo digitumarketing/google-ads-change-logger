@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChangeLog, ChangeResult, PerformanceMetrics, UserRole } from '../types';
 import { useAppContext } from '../contexts/AppContext';
-import { ChevronDown, ChevronUp, MessageSquare, CheckCircle, XCircle, MinusCircle, Clock, User as UserIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, MessageSquare, CheckCircle, XCircle, MinusCircle, Clock, User as UserIcon, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Button from './ui/Button';
 
@@ -22,14 +22,16 @@ const MetricInput: React.FC<{ label: string; name: keyof PerformanceMetrics; val
 );
 
 const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
-    const { accounts, users, updateChangeLog, addComment, currentUser } = useAppContext();
+    const { accounts, users, updateChangeLog, deleteChangeLog, addComment, currentUser } = useAppContext();
     const [isExpanded, setIsExpanded] = useState(false);
     const [postMetrics, setPostMetrics] = useState<PerformanceMetrics>(log.postChangeMetrics || { ctr: null, cpc: null, convRate: null, cpa: null });
     const [result, setResult] = useState<ChangeResult>(log.result);
     const [resultSummary, setResultSummary] = useState(log.resultSummary);
     const [commentText, setCommentText] = useState('');
-    
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const canEdit = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
+    const canDelete = currentUser?.role === UserRole.SuperAdmin;
 
     const account = accounts.find(a => a.id === log.accountId);
     const user = users.find(u => u.id === log.loggedById);
@@ -54,6 +56,14 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
         }
     };
 
+    const handleDelete = async () => {
+        try {
+            await deleteChangeLog(log.id);
+        } catch (error) {
+            alert('Failed to delete log. Please try again.');
+        }
+    };
+
     const chartData = [
         { name: 'CTR (%)', Before: log.preChangeMetrics.ctr, After: postMetrics.ctr },
         { name: 'CPC', Before: log.preChangeMetrics.cpc, After: postMetrics.cpc },
@@ -63,23 +73,51 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
 
     return (
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-                <div className="flex-1 mb-2 md:mb-0">
-                    <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-primary">{account?.name || 'Unknown Account'}</span>
-                        <span className="text-gray-400 dark:text-gray-500">&gt;</span>
-                        <span className="text-gray-800 dark:text-white">{log.campaignName}</span>
+            <div className="p-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div className="flex-1 mb-2 md:mb-0 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+                        <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-primary">{account?.name || 'Unknown Account'}</span>
+                            <span className="text-gray-400 dark:text-gray-500">&gt;</span>
+                            <span className="text-gray-800 dark:text-white">{log.campaignName}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{log.description}</p>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{log.description}</p>
-                </div>
-                <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 w-full md:w-auto">
-                    <span className="font-mono text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">{log.category}</span>
-                    <span className="flex items-center">{new Date(log.dateOfChange).toLocaleDateString()}</span>
-                    <span className={`flex items-center font-semibold ${text}`}>{icon}{log.result}</span>
-                    <div className="flex items-center text-gray-400">
-                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400 w-full md:w-auto">
+                        <span className="font-mono text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">{log.category}</span>
+                        <span className="flex items-center">{new Date(log.dateOfChange).toLocaleDateString()}</span>
+                        <span className={`flex items-center font-semibold ${text}`}>{icon}{log.result}</span>
+                        {canDelete && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowDeleteConfirm(true);
+                                }}
+                                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                title="Delete log"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        )}
+                        <div className="flex items-center text-gray-400 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        </div>
                     </div>
                 </div>
+                {showDeleteConfirm && (
+                    <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                        <p className="text-sm text-red-800 dark:text-red-200 mb-3">Are you sure you want to delete this log? This action cannot be undone.</p>
+                        <div className="flex space-x-2">
+                            <Button size="sm" variant="ghost" onClick={() => setShowDeleteConfirm(false)}>Cancel</Button>
+                            <button
+                                onClick={handleDelete}
+                                className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {isExpanded && (
