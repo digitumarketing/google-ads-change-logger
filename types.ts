@@ -3,7 +3,6 @@ export enum UserRole {
   SuperAdmin = 'Super Admin',
   Admin = 'Admin',
   Analyst = 'Analyst',
-  Viewer = 'Viewer',
 }
 
 export interface User {
