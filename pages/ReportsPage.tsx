@@ -216,20 +216,30 @@ const ReportsPage: React.FC = () => {
                             {selectedAccounts.length === accounts.length ? 'Deselect All' : 'Select All'}
                         </button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        {accounts.map(account => (
-                            <button
-                                key={account.id}
-                                onClick={() => handleAccountToggle(account.id)}
-                                className={`px-4 py-2 rounded-lg border-2 transition-colors ${
-                                    selectedAccounts.length === 0 || selectedAccounts.includes(account.id)
-                                        ? 'bg-blue-500 border-blue-500 text-white'
-                                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400'
-                                }`}
-                            >
-                                {account.name}
-                            </button>
-                        ))}
+                    <div>
+                        <select
+                            multiple
+                            value={selectedAccounts}
+                            onChange={(e) => {
+                                const options = Array.from(e.target.selectedOptions);
+                                setSelectedAccounts(options.map(option => option.value));
+                            }}
+                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
+                            size={Math.min(10, accounts.length)}
+                        >
+                            {accounts.map(account => (
+                                <option
+                                    key={account.id}
+                                    value={account.id}
+                                    className="py-1 px-2 hover:bg-blue-100 dark:hover:bg-blue-900"
+                                >
+                                    {account.name}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Hold Ctrl (Windows) or Cmd (Mac) to select multiple accounts
+                        </p>
                     </div>
                     {selectedAccounts.length > 0 && (
                         <p className="text-sm text-gray-600 dark:text-gray-400">
