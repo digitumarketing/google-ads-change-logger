@@ -5,8 +5,8 @@ import { ChangeCategory, ChangeResult } from '../types';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Download, FileText } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#9c27b0', '#00bcd4', '#ff9800', '#795548'];
 
@@ -167,7 +167,7 @@ const ReportsPage: React.FC = () => {
             ];
         });
 
-        (doc as any).autoTable({
+        autoTable(doc, {
             head: [['Date', 'Account', 'Campaign', 'Category', 'Description', 'Result', 'Logged By']],
             body: tableData,
             startY: selectedAccounts.length > 0 ? 40 : 35,
