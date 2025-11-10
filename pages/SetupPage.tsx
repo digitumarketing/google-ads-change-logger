@@ -48,7 +48,15 @@ const SetupPage: React.FC = () => {
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message || 'Failed to create Super Admin account');
+      let errorMessage = signUpError.message || 'Failed to create Super Admin account';
+
+      if (errorMessage.includes('foreign key constraint') || errorMessage.includes('users_auth_id_fkey')) {
+        errorMessage = 'This email is already registered. Please go to Supabase Dashboard → Authentication → Users and delete the existing auth users, then try again.';
+      } else if (errorMessage.includes('User already registered')) {
+        errorMessage = 'This email is already registered. Please use a different email or delete the existing user from Supabase Dashboard.';
+      }
+
+      setError(errorMessage);
       return;
     }
 
