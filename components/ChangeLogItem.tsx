@@ -87,6 +87,12 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
                         <span className="font-mono text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">{log.category}</span>
                         <span className="flex items-center">{new Date(log.dateOfChange).toLocaleDateString()}</span>
                         <span className={`flex items-center font-semibold ${text}`}>{icon}{log.result}</span>
+                        <div className="flex items-center space-x-1">
+                            <MessageSquare size={16} className="text-gray-400" />
+                            <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-semibold">
+                                {log.comments.length}
+                            </span>
+                        </div>
                         {canDelete && (
                             <button
                                 onClick={(e) => {
