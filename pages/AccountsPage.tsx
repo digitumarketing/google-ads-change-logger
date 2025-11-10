@@ -14,18 +14,7 @@ const AccountsPage: React.FC = () => {
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
-  const canEdit = currentUser?.role === UserRole.SuperAdmin;
-
-  if (!canEdit) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Access Denied</h2>
-          <p className="text-gray-600 dark:text-gray-400">Only Super Admins can manage accounts.</p>
-        </div>
-      </div>
-    );
-  }
+  const canEdit = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin;
 
   const handleAddAccount = () => {
     setSelectedAccount(null);
