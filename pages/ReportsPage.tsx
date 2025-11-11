@@ -13,6 +13,7 @@ const COLORS = ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#9c27b0', '#00bcd4'
 const ReportsPage: React.FC = () => {
     const { changeLogs, users, accounts } = useAppContext();
     const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+    const [selectedAccountForActivity, setSelectedAccountForActivity] = useState<string>('');
 
     const filteredChangeLogs = useMemo(() => {
         if (selectedAccounts.length === 0) {
@@ -58,24 +59,28 @@ const ReportsPage: React.FC = () => {
         const sevenDaysAgo = new Date(new Date().setDate(now.getDate() - 7));
         const thirtyDaysAgo = new Date(new Date().setDate(now.getDate() - 30));
 
-        const accountsToShow = selectedAccounts.length === 0
-            ? accounts
-            : accounts.filter(acc => selectedAccounts.includes(acc.id));
+        if (!selectedAccountForActivity) {
+            return null;
+        }
 
-        return accountsToShow.map(account => {
-            const accountLogs = filteredChangeLogs.filter(log => log.accountId === account.id);
-            const last3Days = accountLogs.filter(log => new Date(log.dateOfChange) >= threeDaysAgo).length;
-            const last7Days = accountLogs.filter(log => new Date(log.dateOfChange) >= sevenDaysAgo).length;
-            const last30Days = accountLogs.filter(log => new Date(log.dateOfChange) >= thirtyDaysAgo).length;
-            return {
-                id: account.id,
-                name: account.name,
-                last3Days,
-                last7Days,
-                last30Days,
-            };
-        });
-    }, [accounts, filteredChangeLogs, selectedAccounts]);
+        const account = accounts.find(acc => acc.id === selectedAccountForActivity);
+        if (!account) return null;
+
+        const accountLogs = changeLogs.filter(log => log.accountId === account.id);
+        const last3Days = accountLogs.filter(log => new Date(log.dateOfChange) >= threeDaysAgo).length;
+        const last7Days = accountLogs.filter(log => new Date(log.dateOfChange) >= sevenDaysAgo).length;
+        const last30Days = accountLogs.filter(log => new Date(log.dateOfChange) >= thirtyDaysAgo).length;
+        const allTime = accountLogs.length;
+
+        return {
+            id: account.id,
+            name: account.name,
+            last3Days,
+            last7Days,
+            last30Days,
+            allTime,
+        };
+    }, [accounts, changeLogs, selectedAccountForActivity]);
     
     const handleAccountToggle = (accountId: string) => {
         setSelectedAccounts(prev => {
@@ -289,27 +294,49 @@ const ReportsPage: React.FC = () => {
                 </Card>
                  <Card className="card-print">
                     <h3 className="font-semibold mb-4">Account Activity (Recent Changes)</h3>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Account Name</th>
-                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last 3 Days</th>
-                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last 7 Days</th>
-                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last 30 Days</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                {accountActivityData.map((data) => (
-                                    <tr key={data.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{data.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-300">{data.last3Days}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-300">{data.last7Days}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-300">{data.last30Days}</td>
-                                    </tr>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Select Account
+                            </label>
+                            <select
+                                value={selectedAccountForActivity}
+                                onChange={(e) => setSelectedAccountForActivity(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="">Choose an account...</option>
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name}
+                                    </option>
                                 ))}
-                            </tbody>
-                        </table>
+                            </select>
+                        </div>
+
+                        {accountActivityData ? (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Last 3 Days</p>
+                                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{accountActivityData.last3Days}</p>
+                                </div>
+                                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Last 7 Days</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{accountActivityData.last7Days}</p>
+                                </div>
+                                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Last 30 Days</p>
+                                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{accountActivityData.last30Days}</p>
+                                </div>
+                                <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">All Time</p>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{accountActivityData.allTime}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+                                <p>Please select an account to view activity data</p>
+                            </div>
+                        )}
                     </div>
                 </Card>
             </div>
