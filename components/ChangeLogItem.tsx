@@ -158,6 +158,29 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
                         )}
                     </div>
                     
+                    {/* Pre-change Metrics */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3">Pre-change Performance</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">CTR (%)</p>
+                                <p className="text-lg font-semibold">{log.preChangeMetrics.ctr !== null ? log.preChangeMetrics.ctr : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">CPC</p>
+                                <p className="text-lg font-semibold">{log.preChangeMetrics.cpc !== null ? log.preChangeMetrics.cpc : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Conv. Rate (%)</p>
+                                <p className="text-lg font-semibold">{log.preChangeMetrics.convRate !== null ? log.preChangeMetrics.convRate : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">CPA</p>
+                                <p className="text-lg font-semibold">{log.preChangeMetrics.cpa !== null ? log.preChangeMetrics.cpa : 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Impact Tracking and Chart */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                          <div className="space-y-4">
@@ -184,9 +207,36 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
                                      <Button onClick={handleUpdate}>Update Impact</Button>
                                 </div>
                               ) : (
-                                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-md">
-                                    <p className="font-semibold">Result Summary</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">{log.resultSummary || "No summary provided."}</p>
+                                  <div className="space-y-4">
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                                        <h4 className="font-semibold mb-3">Post-change Performance</h4>
+                                        {log.postChangeMetrics ? (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">CTR (%)</p>
+                                                    <p className="text-lg font-semibold">{log.postChangeMetrics.ctr !== null ? log.postChangeMetrics.ctr : 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">CPC</p>
+                                                    <p className="text-lg font-semibold">{log.postChangeMetrics.cpc !== null ? log.postChangeMetrics.cpc : 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">Conv. Rate (%)</p>
+                                                    <p className="text-lg font-semibold">{log.postChangeMetrics.convRate !== null ? log.postChangeMetrics.convRate : 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-400">CPA</p>
+                                                    <p className="text-lg font-semibold">{log.postChangeMetrics.cpa !== null ? log.postChangeMetrics.cpa : 'N/A'}</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">No post-change metrics recorded yet.</p>
+                                        )}
+                                    </div>
+                                    <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-md">
+                                        <p className="font-semibold mb-2">Result Summary</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300">{log.resultSummary || "No summary provided."}</p>
+                                    </div>
                                   </div>
                               )}
                          </div>
