@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAppContext } from '../contexts/AppContext';
 import { ChangeCategory, ChangeResult } from '../types';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, ChevronDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -14,6 +14,19 @@ const ReportsPage: React.FC = () => {
     const { changeLogs, users, accounts } = useAppContext();
     const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
     const [selectedAccountForActivity, setSelectedAccountForActivity] = useState<string>('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const filteredChangeLogs = useMemo(() => {
         if (selectedAccounts.length === 0) {
@@ -212,41 +225,55 @@ const ReportsPage: React.FC = () => {
 
             <Card>
                 <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                        <h3 className="font-semibold text-gray-800 dark:text-white">Filter by Accounts</h3>
+                    <h3 className="font-semibold text-gray-800 dark:text-white">Filter by Accounts</h3>
+
+                    <div className="relative" ref={dropdownRef}>
                         <button
-                            onClick={selectAllAccounts}
-                            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="w-full px-4 py-2 text-left bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 flex justify-between items-center"
                         >
-                            {selectedAccounts.length === accounts.length ? 'Deselect All' : 'Select All'}
+                            <span className="text-gray-900 dark:text-white">
+                                {selectedAccounts.length === 0
+                                    ? 'Select accounts...'
+                                    : selectedAccounts.length === accounts.length
+                                    ? 'All Accounts'
+                                    : `${selectedAccounts.length} account${selectedAccounts.length !== 1 ? 's' : ''} selected`
+                                }
+                            </span>
+                            <ChevronDown size={20} className={`text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
+
+                        {isDropdownOpen && (
+                            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                                <div className="sticky top-0 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 px-4 py-2">
+                                    <button
+                                        onClick={selectAllAccounts}
+                                        className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                                    >
+                                        {selectedAccounts.length === accounts.length ? 'Deselect All' : 'Select All'}
+                                    </button>
+                                </div>
+                                <div className="py-1">
+                                    {accounts.map(account => (
+                                        <label
+                                            key={account.id}
+                                            className="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedAccounts.includes(account.id)}
+                                                onChange={() => handleAccountToggle(account.id)}
+                                                className="mr-3 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="text-gray-900 dark:text-white">{account.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div>
-                        <select
-                            multiple
-                            value={selectedAccounts}
-                            onChange={(e) => {
-                                const options = Array.from(e.target.selectedOptions);
-                                setSelectedAccounts(options.map(option => option.value));
-                            }}
-                            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white"
-                            size={Math.min(10, accounts.length)}
-                        >
-                            {accounts.map(account => (
-                                <option
-                                    key={account.id}
-                                    value={account.id}
-                                    className="py-1 px-2 hover:bg-blue-100 dark:hover:bg-blue-900"
-                                >
-                                    {account.name}
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Hold Ctrl (Windows) or Cmd (Mac) to select multiple accounts
-                        </p>
-                    </div>
-                    {selectedAccounts.length > 0 && (
+
+                    {selectedAccounts.length > 0 && selectedAccounts.length < accounts.length && (
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                             Showing data for {selectedAccounts.length} selected account{selectedAccounts.length !== 1 ? 's' : ''}
                         </p>
