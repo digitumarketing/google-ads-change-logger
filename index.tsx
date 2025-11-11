@@ -13,11 +13,9 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <React.StrictMode>
-    <HashRouter>
-      <AppProvider>
-        <App />
-      </AppProvider>
-    </HashRouter>
-  </React.StrictMode>
+  <HashRouter>
+    <AppProvider>
+      <App />
+    </AppProvider>
+  </HashRouter>
 );

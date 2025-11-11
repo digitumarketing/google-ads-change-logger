@@ -39,13 +39,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     initializeAuth();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      (() => {
-        if (event === 'SIGNED_OUT') {
-          setCurrentUser(null);
-        } else if (event === 'SIGNED_IN' && session) {
-          loadCurrentUser(session.user.id);
-        }
-      })();
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+      } else if (event === 'SIGNED_IN' && session) {
+        loadCurrentUser(session.user.id);
+      }
     });
 
     return () => {
