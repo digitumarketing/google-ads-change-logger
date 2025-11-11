@@ -93,7 +93,7 @@ const AccountsPage: React.FC = () => {
         </div>
       </Card>
 
-      <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={selectedAccount ? 'Edit Account' : 'Add New Account'}>
+      <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={selectedAccount ? 'Edit Account' : 'Add New Account'} closeOnOutsideClick={false}>
         <AccountForm account={selectedAccount} onClose={() => setIsFormModalOpen(false)} />
       </Modal>
 

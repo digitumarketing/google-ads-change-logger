@@ -85,7 +85,7 @@ const UsersPage: React.FC = () => {
         </div>
       </Card>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedUser ? 'Edit User' : 'Add New User'}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedUser ? 'Edit User' : 'Add New User'} closeOnOutsideClick={false}>
         <UserForm user={selectedUser} onClose={() => setIsModalOpen(false)} />
       </Modal>
     </div>
