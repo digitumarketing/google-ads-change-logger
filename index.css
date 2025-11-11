@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media print {
+  body {
+    background-color: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+    background-color: white !important;
+  }
+  .card-print {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .reports-grid-print {
+    display: block !important;
+  }
+  .reports-grid-print > * {
+    margin-bottom: 2rem;
+  }
+  h1, h2, h3, h4, p, span, div, text {
+    color: black !important;
+  }
+}

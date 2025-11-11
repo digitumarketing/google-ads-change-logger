@@ -2,70 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Google Ads Change Logger</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'primary': '#4285F4',
-              'secondary': '#34A853',
-              'danger': '#EA4335',
-              'warning': '#FBBC05',
-              'light': '#F8F9FA',
-              'dark': '#202124',
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      @media print {
-        body {
-          background-color: white !important;
-        }
-        .no-print {
-          display: none !important;
-        }
-        main {
-          padding: 0 !important;
-          overflow: visible !important;
-          background-color: white !important;
-        }
-        .card-print {
-          box-shadow: none !important;
-          border: 1px solid #e2e8f0 !important;
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-        .reports-grid-print {
-            display: block !important;
-        }
-        .reports-grid-print > * {
-            margin-bottom: 2rem;
-        }
-        h1, h2, h3, h4, p, span, div, text {
-            color: black !important;
-        }
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.552.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+  </head>
   <body class="bg-light dark:bg-dark text-dark dark:text-light">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
