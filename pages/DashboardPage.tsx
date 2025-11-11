@@ -111,7 +111,7 @@ const DashboardPage: React.FC = () => {
                 </div>
             </Card>
 
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log a New Change" size="xl">
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Log a New Change" size="xl" closeOnOutsideClick={false}>
                 <ChangeLogForm onClose={() => setIsModalOpen(false)} />
             </Modal>
         </div>
