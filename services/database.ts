@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { User, Account, ChangeLog, Comment, PerformanceMetrics } from '../types';
+import { User, Account, ChangeLog, Comment, PerformanceMetrics, Notification, NotificationAction } from '../types';
 
 interface DbChangeLog {
   id: string;
@@ -385,6 +385,77 @@ export const commentService = {
       .from('comments')
       .delete()
       .eq('id', commentId);
+
+    if (error) throw error;
+  },
+};
+
+export const notificationService = {
+  async getAll(): Promise<Notification[]> {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(n => ({
+      id: n.id,
+      userId: n.user_id,
+      userName: n.user_name,
+      actionType: n.action_type as NotificationAction,
+      entityType: n.entity_type,
+      entityId: n.entity_id,
+      description: n.description,
+      metadata: n.metadata || {},
+      createdAt: n.created_at,
+    }));
+  },
+
+  async create(
+    userId: string,
+    userName: string,
+    actionType: NotificationAction,
+    entityType: string,
+    entityId: string | null,
+    description: string,
+    metadata: Record<string, any> = {}
+  ): Promise<Notification> {
+    const newNotification = {
+      user_id: userId,
+      user_name: userName,
+      action_type: actionType,
+      entity_type: entityType,
+      entity_id: entityId,
+      description,
+      metadata,
+    };
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert([newNotification])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      userName: data.user_name,
+      actionType: data.action_type as NotificationAction,
+      entityType: data.entity_type,
+      entityId: data.entity_id,
+      description: data.description,
+      metadata: data.metadata || {},
+      createdAt: data.created_at,
+    };
+  },
+
+  async delete(notificationId: string): Promise<void> {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', notificationId);
 
     if (error) throw error;
   },

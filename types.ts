@@ -95,3 +95,23 @@ export interface ChangeLog {
 }
 
 export type ChangeLogFormData = Omit<ChangeLog, 'id' | 'comments' | 'postChangeMetrics' | 'result' | 'resultSummary'>;
+
+export enum NotificationAction {
+  CreateLog = 'create_log',
+  UpdateLog = 'update_log',
+  DeleteLog = 'delete_log',
+  CreateComment = 'create_comment',
+  DeleteComment = 'delete_comment',
+}
+
+export interface Notification {
+  id: string;
+  userId: string | null;
+  userName: string;
+  actionType: NotificationAction;
+  entityType: string;
+  entityId: string | null;
+  description: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+}

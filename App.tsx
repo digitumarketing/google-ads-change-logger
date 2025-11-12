@@ -9,6 +9,7 @@ import UsersPage from './pages/UsersPage';
 import LoginPage from './pages/LoginPage';
 import LogPage from './pages/LogPage';
 import SetupPage from './pages/SetupPage';
+import NotificationsPage from './pages/NotificationsPage';
 import { useAppContext } from './contexts/AppContext';
 import { UserRole } from './types';
 
@@ -33,6 +34,7 @@ const AppLayout: React.FC = () => (
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

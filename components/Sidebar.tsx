@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Building, BarChart3, Bot, Users, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Building, BarChart3, Bot, Users, ClipboardList, Bell } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { UserRole } from '../types';
 
@@ -42,6 +42,10 @@ const Sidebar: React.FC = () => {
             Users
           </NavLink>
         )}
+        <NavLink to="/notifications" className={navLinkClasses}>
+          <Bell size={20} className="mr-3" />
+          Notifications
+        </NavLink>
       </nav>
     </div>
   );

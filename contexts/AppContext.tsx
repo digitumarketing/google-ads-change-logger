@@ -1,6 +1,6 @@
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { User, Account, ChangeLog, UserRole } from '../types';
-import { userService, accountService, changeLogService, commentService } from '../services/database';
+import { User, Account, ChangeLog, UserRole, Notification, NotificationAction } from '../types';
+import { userService, accountService, changeLogService, commentService, notificationService } from '../services/database';
 import { authService } from '../services/auth';
 import { supabase } from '../lib/supabase';
 
@@ -22,6 +22,8 @@ interface AppContextType {
   deleteChangeLog: (logId: string) => void;
   addComment: (logId: string, commentText: string) => void;
   deleteComment: (logId: string, commentId: string) => void;
+  notifications: Notification[];
+  loadNotifications: () => void;
   loading: boolean;
   hasUsersInDb: boolean;
 }
@@ -33,6 +35,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasUsersInDb, setHasUsersInDb] = useState(false);
 
@@ -89,17 +92,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const loadData = async () => {
     try {
-      const [usersData, accountsData, changeLogsData] = await Promise.all([
+      const [usersData, accountsData, changeLogsData, notificationsData] = await Promise.all([
         userService.getAll(),
         accountService.getAll(),
         changeLogService.getAll(),
+        notificationService.getAll(),
       ]);
 
       setUsers(usersData);
       setAccounts(accountsData);
       setChangeLogs(changeLogsData);
+      setNotifications(notificationsData);
     } catch (error) {
       console.error('Error loading data:', error);
+    }
+  };
+
+  const loadNotifications = async () => {
+    try {
+      const notificationsData = await notificationService.getAll();
+      setNotifications(notificationsData);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
     }
   };
 
@@ -193,6 +207,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         loggedById: currentUser.id,
       }, currentUser.name);
       setChangeLogs(prev => [newLog, ...prev]);
+
+      const account = accounts.find(a => a.id === logData.accountId);
+      await notificationService.create(
+        currentUser.id,
+        currentUser.name,
+        NotificationAction.CreateLog,
+        'log',
+        newLog.id,
+        `Created a new change log for ${account?.name || 'Unknown Account'} - ${logData.campaignName}`,
+        {
+          accountName: account?.name,
+          campaignName: logData.campaignName,
+          category: logData.category,
+        }
+      );
+      loadNotifications();
     } catch (error) {
       console.error('Error adding change log:', error);
     }
@@ -203,6 +233,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const updated = await changeLogService.update(updatedLog, currentUser.id, currentUser.name);
       setChangeLogs(prev => prev.map(log => log.id === updated.id ? updated : log));
+
+      const account = accounts.find(a => a.id === updatedLog.accountId);
+      await notificationService.create(
+        currentUser.id,
+        currentUser.name,
+        NotificationAction.UpdateLog,
+        'log',
+        updatedLog.id,
+        `Updated change log for ${account?.name || 'Unknown Account'} - ${updatedLog.campaignName}`,
+        {
+          accountName: account?.name,
+          campaignName: updatedLog.campaignName,
+          result: updatedLog.result,
+        }
+      );
+      loadNotifications();
     } catch (error) {
       console.error('Error updating change log:', error);
     }
@@ -218,6 +264,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         return log;
       }));
+
+      const log = changeLogs.find(l => l.id === logId);
+      const account = accounts.find(a => a.id === log?.accountId);
+      await notificationService.create(
+        currentUser.id,
+        currentUser.name,
+        NotificationAction.CreateComment,
+        'comment',
+        newComment.id,
+        `Added a comment on ${account?.name || 'Unknown Account'} - ${log?.campaignName || 'Unknown Campaign'}`,
+        {
+          accountName: account?.name,
+          campaignName: log?.campaignName,
+          commentPreview: commentText.substring(0, 50),
+        }
+      );
+      loadNotifications();
     } catch (error) {
       console.error('Error adding comment:', error);
     }
@@ -226,6 +289,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const deleteComment = async (logId: string, commentId: string) => {
     if (!currentUser) return;
     try {
+      const log = changeLogs.find(l => l.id === logId);
+      const account = accounts.find(a => a.id === log?.accountId);
+
       await commentService.delete(commentId);
       setChangeLogs(prev => prev.map(log => {
         if (log.id === logId) {
@@ -233,6 +299,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         return log;
       }));
+
+      await notificationService.create(
+        currentUser.id,
+        currentUser.name,
+        NotificationAction.DeleteComment,
+        'comment',
+        commentId,
+        `Deleted a comment on ${account?.name || 'Unknown Account'} - ${log?.campaignName || 'Unknown Campaign'}`,
+        {
+          accountName: account?.name,
+          campaignName: log?.campaignName,
+        }
+      );
+      loadNotifications();
     } catch (error) {
       console.error('Error deleting comment:', error);
       throw error;
@@ -240,9 +320,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteChangeLog = async (logId: string) => {
+    if (!currentUser) return;
     try {
+      const log = changeLogs.find(l => l.id === logId);
+      const account = accounts.find(a => a.id === log?.accountId);
+
       await changeLogService.delete(logId);
       setChangeLogs(prev => prev.filter(log => log.id !== logId));
+
+      await notificationService.create(
+        currentUser.id,
+        currentUser.name,
+        NotificationAction.DeleteLog,
+        'log',
+        logId,
+        `Deleted change log for ${account?.name || 'Unknown Account'} - ${log?.campaignName || 'Unknown Campaign'}`,
+        {
+          accountName: account?.name,
+          campaignName: log?.campaignName,
+        }
+      );
+      loadNotifications();
     } catch (error) {
       console.error('Error deleting change log:', error);
       throw error;
@@ -267,6 +365,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteChangeLog,
     addComment,
     deleteComment,
+    notifications,
+    loadNotifications,
     loading,
     hasUsersInDb,
   };
