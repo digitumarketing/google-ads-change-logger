@@ -24,6 +24,7 @@ interface AppContextType {
   deleteComment: (logId: string, commentId: string) => void;
   notifications: Notification[];
   loadNotifications: () => void;
+  deleteNotification: (notificationId: string) => void;
   loading: boolean;
   hasUsersInDb: boolean;
 }
@@ -347,6 +348,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await notificationService.delete(notificationId);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  };
+
   const value = {
     users,
     currentUser,
@@ -367,6 +378,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteComment,
     notifications,
     loadNotifications,
+    deleteNotification,
     loading,
     hasUsersInDb,
   };

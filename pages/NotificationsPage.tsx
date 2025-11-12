@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { Bell, FileText, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
-import { NotificationAction } from '../types';
+import { NotificationAction, UserRole } from '../types';
 import Card from '../components/ui/Card';
 
 const getActionIcon = (action: NotificationAction) => {
@@ -55,7 +55,20 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 const NotificationsPage: React.FC = () => {
-  const { notifications } = useAppContext();
+  const { notifications, currentUser, deleteNotification } = useAppContext();
+  const [deletingNotificationId, setDeletingNotificationId] = useState<string | null>(null);
+
+  const isSuperAdmin = currentUser?.role === UserRole.SuperAdmin;
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    try {
+      await deleteNotification(notificationId);
+      setDeletingNotificationId(null);
+    } catch (error) {
+      alert('Failed to delete notification. Please try again.');
+      setDeletingNotificationId(null);
+    }
+  };
 
   const groupedNotifications = notifications.reduce((acc, notification) => {
     const date = new Date(notification.createdAt).toLocaleDateString();
@@ -102,7 +115,7 @@ const NotificationsPage: React.FC = () => {
                   {notifs.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 ${getActionColor(notification.actionType)}`}
+                      className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 ${getActionColor(notification.actionType)} group`}
                     >
                       <div className="flex-shrink-0 mt-1">
                         {getActionIcon(notification.actionType)}
@@ -129,6 +142,34 @@ const NotificationsPage: React.FC = () => {
                           </span>
                         </div>
                       </div>
+                      {isSuperAdmin && (
+                        <div className="flex-shrink-0">
+                          {deletingNotificationId === notification.id ? (
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleDeleteNotification(notification.id)}
+                                className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => setDeletingNotificationId(null)}
+                                className="text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setDeletingNotificationId(notification.id)}
+                              className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-opacity"
+                              title="Delete notification"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
