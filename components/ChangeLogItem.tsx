@@ -22,13 +22,14 @@ const MetricInput: React.FC<{ label: string; name: keyof PerformanceMetrics; val
 );
 
 const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
-    const { accounts, users, updateChangeLog, deleteChangeLog, addComment, currentUser } = useAppContext();
+    const { accounts, users, updateChangeLog, deleteChangeLog, addComment, deleteComment, currentUser } = useAppContext();
     const [isExpanded, setIsExpanded] = useState(false);
     const [postMetrics, setPostMetrics] = useState<PerformanceMetrics>(log.postChangeMetrics || { ctr: null, cpc: null, convRate: null, cpa: null });
     const [result, setResult] = useState<ChangeResult>(log.result);
     const [resultSummary, setResultSummary] = useState(log.resultSummary);
     const [commentText, setCommentText] = useState('');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
     const canEdit = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
     const canDelete = currentUser?.role === UserRole.SuperAdmin;
@@ -61,6 +62,16 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
             await deleteChangeLog(log.id);
         } catch (error) {
             alert('Failed to delete log. Please try again.');
+        }
+    };
+
+    const handleDeleteComment = async (commentId: string) => {
+        try {
+            await deleteComment(log.id, commentId);
+            setDeletingCommentId(null);
+        } catch (error) {
+            alert('Failed to delete comment. Please try again.');
+            setDeletingCommentId(null);
         }
     };
 
@@ -264,14 +275,43 @@ const ChangeLogItem: React.FC<{ log: ChangeLog }> = ({ log }) => {
                         <h3 className="text-lg font-semibold flex items-center mb-2"><MessageSquare size={18} className="mr-2" /> Discussion</h3>
                         <div className="space-y-3">
                             {log.comments.map(comment => (
-                                <div key={comment.id} className="flex items-start space-x-3 text-sm">
+                                <div key={comment.id} className="flex items-start space-x-3 text-sm group">
                                     <UserIcon className="h-5 w-5 text-gray-400 mt-0.5" />
                                     <div className="flex-1">
-                                        <p>
-                                          <span className="font-semibold text-gray-800 dark:text-white">{comment.userName}</span>
-                                          <span className="text-gray-400 ml-2 text-xs">{new Date(comment.timestamp).toLocaleString()}</span>
+                                        <p className="flex items-center justify-between">
+                                          <span>
+                                            <span className="font-semibold text-gray-800 dark:text-white">{comment.userName}</span>
+                                            <span className="text-gray-400 ml-2 text-xs">{new Date(comment.timestamp).toLocaleString()}</span>
+                                          </span>
+                                          {canDelete && (
+                                            deletingCommentId === comment.id ? (
+                                              <div className="flex items-center space-x-2">
+                                                <span className="text-xs text-gray-500">Delete?</span>
+                                                <button
+                                                  onClick={() => handleDeleteComment(comment.id)}
+                                                  className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium"
+                                                >
+                                                  Yes
+                                                </button>
+                                                <button
+                                                  onClick={() => setDeletingCommentId(null)}
+                                                  className="text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 font-medium"
+                                                >
+                                                  No
+                                                </button>
+                                              </div>
+                                            ) : (
+                                              <button
+                                                onClick={() => setDeletingCommentId(comment.id)}
+                                                className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-opacity"
+                                                title="Delete comment"
+                                              >
+                                                <Trash2 size={14} />
+                                              </button>
+                                            )
+                                          )}
                                         </p>
-                                        <p className="text-gray-600 dark:text-gray-300">{comment.text}</p>
+                                        <p className="text-gray-600 dark:text-gray-300 mt-1">{comment.text}</p>
                                     </div>
                                 </div>
                             ))}

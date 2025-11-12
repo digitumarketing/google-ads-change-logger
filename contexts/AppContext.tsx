@@ -21,6 +21,7 @@ interface AppContextType {
   updateChangeLog: (log: ChangeLog) => void;
   deleteChangeLog: (logId: string) => void;
   addComment: (logId: string, commentText: string) => void;
+  deleteComment: (logId: string, commentId: string) => void;
   loading: boolean;
   hasUsersInDb: boolean;
 }
@@ -222,6 +223,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const deleteComment = async (logId: string, commentId: string) => {
+    if (!currentUser) return;
+    try {
+      await commentService.delete(commentId);
+      setChangeLogs(prev => prev.map(log => {
+        if (log.id === logId) {
+          return { ...log, comments: log.comments.filter(c => c.id !== commentId) };
+        }
+        return log;
+      }));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  };
+
   const deleteChangeLog = async (logId: string) => {
     try {
       await changeLogService.delete(logId);
@@ -249,6 +266,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     updateChangeLog,
     deleteChangeLog,
     addComment,
+    deleteComment,
     loading,
     hasUsersInDb,
   };

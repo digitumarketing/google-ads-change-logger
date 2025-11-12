@@ -379,4 +379,13 @@ export const commentService = {
       text: data.text,
     };
   },
+
+  async delete(commentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) throw error;
+  },
 };
