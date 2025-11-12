@@ -23,7 +23,10 @@ interface AppContextType {
   addComment: (logId: string, commentText: string) => void;
   deleteComment: (logId: string, commentId: string) => void;
   notifications: Notification[];
+  unreadNotificationCount: number;
   loadNotifications: () => void;
+  loadUnreadCount: () => void;
+  markAllNotificationsAsRead: () => void;
   deleteNotification: (notificationId: string) => void;
   loading: boolean;
   hasUsersInDb: boolean;
@@ -37,6 +40,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [hasUsersInDb, setHasUsersInDb] = useState(false);
 
@@ -59,6 +63,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     if (currentUser) {
       loadData();
+      loadUnreadCount();
+
+      const notificationChannel = supabase
+        .channel('notification-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications',
+          },
+          () => {
+            loadNotifications();
+            loadUnreadCount();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notification_reads',
+          },
+          () => {
+            loadUnreadCount();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(notificationChannel);
+      };
     }
   }, [currentUser]);
 
@@ -115,6 +151,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setNotifications(notificationsData);
     } catch (error) {
       console.error('Error loading notifications:', error);
+    }
+  };
+
+  const loadUnreadCount = async () => {
+    if (!currentUser) return;
+    try {
+      const count = await notificationService.getUnreadCount(currentUser.id);
+      setUnreadNotificationCount(count);
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    if (!currentUser) return;
+    try {
+      await notificationService.markAllAsRead(currentUser.id);
+      setUnreadNotificationCount(0);
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
     }
   };
 
@@ -377,7 +433,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addComment,
     deleteComment,
     notifications,
+    unreadNotificationCount,
     loadNotifications,
+    loadUnreadCount,
+    markAllNotificationsAsRead,
     deleteNotification,
     loading,
     hasUsersInDb,

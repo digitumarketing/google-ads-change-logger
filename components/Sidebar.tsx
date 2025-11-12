@@ -5,7 +5,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { UserRole } from '../types';
 
 const Sidebar: React.FC = () => {
-  const { currentUser } = useAppContext();
+  const { currentUser, unreadNotificationCount } = useAppContext();
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${
       isActive
@@ -45,6 +45,11 @@ const Sidebar: React.FC = () => {
         <NavLink to="/notifications" className={navLinkClasses}>
           <Bell size={20} className="mr-3" />
           Notifications
+          {unreadNotificationCount > 0 && (
+            <span className="ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-red-500 text-white rounded-full text-xs font-semibold">
+              {unreadNotificationCount}
+            </span>
+          )}
         </NavLink>
       </nav>
     </div>

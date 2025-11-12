@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { Bell, FileText, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
 import { NotificationAction, UserRole } from '../types';
@@ -55,10 +55,14 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 const NotificationsPage: React.FC = () => {
-  const { notifications, currentUser, deleteNotification } = useAppContext();
+  const { notifications, currentUser, deleteNotification, markAllNotificationsAsRead } = useAppContext();
   const [deletingNotificationId, setDeletingNotificationId] = useState<string | null>(null);
 
   const isSuperAdmin = currentUser?.role === UserRole.SuperAdmin;
+
+  useEffect(() => {
+    markAllNotificationsAsRead();
+  }, []);
 
   const handleDeleteNotification = async (notificationId: string) => {
     try {

@@ -459,4 +459,55 @@ export const notificationService = {
 
     if (error) throw error;
   },
+
+  async getUnreadCount(userId: string): Promise<number> {
+    const { data: notifications, error: notifError } = await supabase
+      .from('notifications')
+      .select('id');
+
+    if (notifError) throw notifError;
+
+    const { data: reads, error: readsError } = await supabase
+      .from('notification_reads')
+      .select('notification_id')
+      .eq('user_id', userId);
+
+    if (readsError) throw readsError;
+
+    const readNotificationIds = new Set((reads || []).map(r => r.notification_id));
+    const unreadCount = (notifications || []).filter(n => !readNotificationIds.has(n.id)).length;
+
+    return unreadCount;
+  },
+
+  async markAllAsRead(userId: string): Promise<void> {
+    const { data: notifications, error: notifError } = await supabase
+      .from('notifications')
+      .select('id');
+
+    if (notifError) throw notifError;
+
+    const { data: existingReads, error: readsError } = await supabase
+      .from('notification_reads')
+      .select('notification_id')
+      .eq('user_id', userId);
+
+    if (readsError) throw readsError;
+
+    const readNotificationIds = new Set((existingReads || []).map(r => r.notification_id));
+    const unreadNotifications = (notifications || []).filter(n => !readNotificationIds.has(n.id));
+
+    if (unreadNotifications.length > 0) {
+      const readsToInsert = unreadNotifications.map(n => ({
+        notification_id: n.id,
+        user_id: userId,
+      }));
+
+      const { error } = await supabase
+        .from('notification_reads')
+        .insert(readsToInsert);
+
+      if (error) throw error;
+    }
+  },
 };
