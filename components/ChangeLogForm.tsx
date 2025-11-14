@@ -21,7 +21,7 @@ const ChangeLogForm: React.FC<ChangeLogFormProps> = ({ onClose }) => {
         reason: '',
         expectedImpact: ExpectedImpact.Test,
         preChangeMetrics: { ctr: null, cpc: null, convRate: null, cpa: null },
-        nextReviewDate: '',
+        nextReviewDate: undefined,
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -93,7 +93,7 @@ const ChangeLogForm: React.FC<ChangeLogFormProps> = ({ onClose }) => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Next Review Date (Optional)</label>
-                    <input type="date" name="nextReviewDate" value={formData.nextReviewDate} onChange={handleChange} className="mt-1 w-full form-input" />
+                    <input type="date" name="nextReviewDate" value={formData.nextReviewDate || ''} onChange={handleChange} className="mt-1 w-full form-input" />
                 </div>
             </div>
 

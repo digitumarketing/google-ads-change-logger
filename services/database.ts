@@ -100,7 +100,7 @@ const mapChangeLogToDb = (log: Partial<ChangeLog>, includeTracking = false) => {
     post_change_cpc: log.postChangeMetrics?.cpc,
     post_change_conv_rate: log.postChangeMetrics?.convRate,
     post_change_cpa: log.postChangeMetrics?.cpa,
-    next_review_date: log.nextReviewDate,
+    next_review_date: log.nextReviewDate && log.nextReviewDate.trim() !== '' ? log.nextReviewDate : null,
     logged_by_id: log.loggedById,
     result: log.result,
     result_summary: log.resultSummary,
