@@ -169,13 +169,19 @@ const NotificationsPage: React.FC = () => {
                           {deletingNotificationId === notification.id ? (
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => handleDeleteNotification(notification.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteNotification(notification.id);
+                                }}
                                 className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-medium"
                               >
                                 Confirm
                               </button>
                               <button
-                                onClick={() => setDeletingNotificationId(null)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingNotificationId(null);
+                                }}
                                 className="text-xs text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 font-medium"
                               >
                                 Cancel
@@ -183,7 +189,10 @@ const NotificationsPage: React.FC = () => {
                             </div>
                           ) : (
                             <button
-                              onClick={() => setDeletingNotificationId(notification.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingNotificationId(notification.id);
+                              }}
                               className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-opacity"
                               title="Delete notification"
                             >
