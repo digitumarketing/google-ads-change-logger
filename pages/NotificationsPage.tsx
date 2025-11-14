@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
 import { Bell, FileText, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
 import { NotificationAction, UserRole } from '../types';
@@ -55,6 +56,7 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 const NotificationsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { notifications, currentUser, deleteNotification, markAllNotificationsAsRead } = useAppContext();
   const [deletingNotificationId, setDeletingNotificationId] = useState<string | null>(null);
 
@@ -71,6 +73,15 @@ const NotificationsPage: React.FC = () => {
     } catch (error) {
       alert('Failed to delete notification. Please try again.');
       setDeletingNotificationId(null);
+    }
+  };
+
+  const handleNotificationClick = (notification: typeof notifications[0]) => {
+    if (notification.actionType === NotificationAction.DeleteLog) {
+      return;
+    }
+    if (notification.entityId && notification.entityType === 'log') {
+      navigate(`/log?highlight=${notification.entityId}`);
     }
   };
 
@@ -116,10 +127,17 @@ const NotificationsPage: React.FC = () => {
                   {date === new Date().toLocaleDateString() ? 'Today' : date}
                 </h3>
                 <div className="space-y-3">
-                  {notifs.map((notification) => (
+                  {notifs.map((notification) => {
+                    const isDeletedLog = notification.actionType === NotificationAction.DeleteLog;
+                    const isClickable = !isDeletedLog && notification.entityId && notification.entityType === 'log';
+
+                    return (
                     <div
                       key={notification.id}
-                      className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 ${getActionColor(notification.actionType)} group`}
+                      onClick={() => isClickable && handleNotificationClick(notification)}
+                      className={`flex items-start space-x-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 ${getActionColor(notification.actionType)} group ${
+                        isClickable ? 'cursor-pointer hover:shadow-md transition-shadow' : 'cursor-default'
+                      }`}
                     >
                       <div className="flex-shrink-0 mt-1">
                         {getActionIcon(notification.actionType)}
@@ -175,7 +193,8 @@ const NotificationsPage: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}

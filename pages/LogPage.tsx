@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PlusCircle, Search } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { UserRole } from '../types';
@@ -9,12 +10,32 @@ import ChangeLogForm from '../components/ChangeLogForm';
 import ChangeLogItem from '../components/ChangeLogItem';
 
 const LogPage: React.FC = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const { accounts, changeLogs, currentUser } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAccount, setFilterAccount] = useState('all');
+    const [highlightedLogId, setHighlightedLogId] = useState<string | null>(null);
 
     const canAddChange = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
+
+    useEffect(() => {
+        const highlightId = searchParams.get('highlight');
+        if (highlightId) {
+            setHighlightedLogId(highlightId);
+            setTimeout(() => {
+                const element = document.getElementById(`log-${highlightId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+
+            setTimeout(() => {
+                setHighlightedLogId(null);
+                setSearchParams({});
+            }, 3000);
+        }
+    }, [searchParams, setSearchParams]);
 
     const filteredLogs = useMemo(() => {
         return changeLogs
@@ -70,7 +91,15 @@ const LogPage: React.FC = () => {
 
                 <div className="space-y-4">
                     {filteredLogs.length > 0 ? (
-                        filteredLogs.map(log => <ChangeLogItem key={log.id} log={log} />)
+                        filteredLogs.map(log => (
+                            <div
+                                key={log.id}
+                                id={`log-${log.id}`}
+                                className={highlightedLogId === log.id ? 'ring-2 ring-blue-500 rounded-lg transition-all duration-300' : ''}
+                            >
+                                <ChangeLogItem log={log} />
+                            </div>
+                        ))
                     ) : (
                         <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                             <p>No change logs found.</p>
