@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { ChangeLog, UserRole } from '../types';
 import Card from '../components/ui/Card';
@@ -16,12 +16,15 @@ const DashboardCard: React.FC<{ title: string; value: string | number; descripti
     </Card>
 );
 
+const LOGS_PER_PAGE = 10;
+
 const DashboardPage: React.FC = () => {
     const { accounts, changeLogs, currentUser } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAccount, setFilterAccount] = useState('all');
-    
+    const [currentPage, setCurrentPage] = useState(1);
+
     const canAddChange = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
 
     const stats = useMemo(() => {
@@ -54,6 +57,17 @@ const DashboardPage: React.FC = () => {
                 );
             });
     }, [changeLogs, searchTerm, filterAccount, accounts]);
+
+    const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+    const paginatedLogs = useMemo(() => {
+        const startIndex = (currentPage - 1) * LOGS_PER_PAGE;
+        return filteredLogs.slice(startIndex, startIndex + LOGS_PER_PAGE);
+    }, [filteredLogs, currentPage]);
+
+    // Reset to page 1 when filters change
+    useMemo(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterAccount]);
 
 
     return (
@@ -101,7 +115,36 @@ const DashboardPage: React.FC = () => {
 
                 <div className="space-y-4">
                     {filteredLogs.length > 0 ? (
-                        filteredLogs.map(log => <ChangeLogItem key={log.id} log={log} />)
+                        <>
+                            {paginatedLogs.map(log => <ChangeLogItem key={log.id} log={log} />)}
+
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} logs
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                             <p>No change logs found.</p>

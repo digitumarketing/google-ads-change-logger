@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { UserRole } from '../types';
 import Card from '../components/ui/Card';
@@ -9,6 +9,8 @@ import Modal from '../components/ui/Modal';
 import ChangeLogForm from '../components/ChangeLogForm';
 import ChangeLogItem from '../components/ChangeLogItem';
 
+const LOGS_PER_PAGE = 10;
+
 const LogPage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const { accounts, changeLogs, currentUser } = useAppContext();
@@ -16,6 +18,7 @@ const LogPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterAccount, setFilterAccount] = useState('all');
     const [highlightedLogId, setHighlightedLogId] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const canAddChange = currentUser?.role === UserRole.SuperAdmin || currentUser?.role === UserRole.Admin || currentUser?.role === UserRole.Analyst;
 
@@ -23,6 +26,14 @@ const LogPage: React.FC = () => {
         const highlightId = searchParams.get('highlight');
         if (highlightId) {
             setHighlightedLogId(highlightId);
+
+            // Find which page contains this log
+            const logIndex = changeLogs.findIndex(log => log.id === highlightId);
+            if (logIndex !== -1) {
+                const pageContainingLog = Math.ceil((logIndex + 1) / LOGS_PER_PAGE);
+                setCurrentPage(pageContainingLog);
+            }
+
             setTimeout(() => {
                 const element = document.getElementById(`log-${highlightId}`);
                 if (element) {
@@ -35,7 +46,7 @@ const LogPage: React.FC = () => {
                 setSearchParams({});
             }, 3000);
         }
-    }, [searchParams, setSearchParams]);
+    }, [searchParams, setSearchParams, changeLogs]);
 
     const filteredLogs = useMemo(() => {
         return changeLogs
@@ -52,6 +63,17 @@ const LogPage: React.FC = () => {
                 );
             });
     }, [changeLogs, searchTerm, filterAccount, accounts]);
+
+    const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+    const paginatedLogs = useMemo(() => {
+        const startIndex = (currentPage - 1) * LOGS_PER_PAGE;
+        return filteredLogs.slice(startIndex, startIndex + LOGS_PER_PAGE);
+    }, [filteredLogs, currentPage]);
+
+    // Reset to page 1 when filters change
+    useMemo(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterAccount]);
 
     return (
         <div className="space-y-6">
@@ -91,15 +113,44 @@ const LogPage: React.FC = () => {
 
                 <div className="space-y-4">
                     {filteredLogs.length > 0 ? (
-                        filteredLogs.map(log => (
-                            <div
-                                key={log.id}
-                                id={`log-${log.id}`}
-                                className={highlightedLogId === log.id ? 'ring-2 ring-blue-500 rounded-lg transition-all duration-300' : ''}
-                            >
-                                <ChangeLogItem log={log} />
-                            </div>
-                        ))
+                        <>
+                            {paginatedLogs.map(log => (
+                                <div
+                                    key={log.id}
+                                    id={`log-${log.id}`}
+                                    className={highlightedLogId === log.id ? 'ring-2 ring-blue-500 rounded-lg transition-all duration-300' : ''}
+                                >
+                                    <ChangeLogItem log={log} />
+                                </div>
+                            ))}
+
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                                        Showing {((currentPage - 1) * LOGS_PER_PAGE) + 1} to {Math.min(currentPage * LOGS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} logs
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronLeft size={20} />
+                                        </button>
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronRight size={20} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                             <p>No change logs found.</p>
