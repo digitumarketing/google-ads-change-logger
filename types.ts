@@ -102,6 +102,7 @@ export enum NotificationAction {
   DeleteLog = 'delete_log',
   CreateComment = 'create_comment',
   DeleteComment = 'delete_comment',
+  ReviewReminder = 'review_reminder',
 }
 
 export interface Notification {

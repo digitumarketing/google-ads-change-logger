@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
-import { Bell, FileText, MessageSquare, Plus, Edit, Trash2 } from 'lucide-react';
+import { Bell, FileText, MessageSquare, Plus, Edit, Trash2, Clock } from 'lucide-react';
 import { NotificationAction, UserRole } from '../types';
 import Card from '../components/ui/Card';
 
@@ -17,6 +17,8 @@ const getActionIcon = (action: NotificationAction) => {
       return <MessageSquare className="text-blue-500" size={18} />;
     case NotificationAction.DeleteComment:
       return <Trash2 className="text-red-400" size={18} />;
+    case NotificationAction.ReviewReminder:
+      return <Clock className="text-orange-500" size={18} />;
     default:
       return <FileText className="text-gray-500" size={18} />;
   }
@@ -34,6 +36,8 @@ const getActionColor = (action: NotificationAction) => {
       return 'bg-blue-50 dark:bg-blue-900/10';
     case NotificationAction.DeleteComment:
       return 'bg-red-50 dark:bg-red-900/10';
+    case NotificationAction.ReviewReminder:
+      return 'bg-orange-100 dark:bg-orange-900/20';
     default:
       return 'bg-gray-100 dark:bg-gray-800';
   }
@@ -85,6 +89,11 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
+  const isClickableNotification = (notification: typeof notifications[0]) => {
+    const isDeletedLog = notification.actionType === NotificationAction.DeleteLog;
+    return !isDeletedLog && notification.entityId && notification.entityType === 'log';
+  };
+
   const groupedNotifications = notifications.reduce((acc, notification) => {
     const date = new Date(notification.createdAt).toLocaleDateString();
     if (!acc[date]) {
@@ -128,8 +137,7 @@ const NotificationsPage: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                   {notifs.map((notification) => {
-                    const isDeletedLog = notification.actionType === NotificationAction.DeleteLog;
-                    const isClickable = !isDeletedLog && notification.entityId && notification.entityType === 'log';
+                    const isClickable = isClickableNotification(notification);
 
                     return (
                     <div
