@@ -16,7 +16,7 @@ const DashboardCard: React.FC<{ title: string; value: string | number; descripti
     </Card>
 );
 
-const LOGS_PER_PAGE = 10;
+const LOGS_PER_PAGE = 30;
 
 const DashboardPage: React.FC = () => {
     const { accounts, changeLogs, currentUser } = useAppContext();

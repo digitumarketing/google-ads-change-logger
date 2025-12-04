@@ -9,7 +9,7 @@ import Modal from '../components/ui/Modal';
 import ChangeLogForm from '../components/ChangeLogForm';
 import ChangeLogItem from '../components/ChangeLogItem';
 
-const LOGS_PER_PAGE = 10;
+const LOGS_PER_PAGE = 30;
 
 const LogPage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
