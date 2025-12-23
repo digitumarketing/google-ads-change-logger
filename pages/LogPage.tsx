@@ -27,6 +27,10 @@ const LogPage: React.FC = () => {
         if (highlightId) {
             setHighlightedLogId(highlightId);
 
+            // Clear filters to ensure the highlighted log is visible
+            setSearchTerm('');
+            setFilterAccount('all');
+
             // Find which page contains this log
             const logIndex = changeLogs.findIndex(log => log.id === highlightId);
             if (logIndex !== -1) {
